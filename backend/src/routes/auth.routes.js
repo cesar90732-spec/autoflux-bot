@@ -33,6 +33,7 @@ router.post(
   authController.login
 );
 
+router.post('/google', authController.googleLogin);
 router.get('/me', authenticate, authController.me);
 
 module.exports = router;

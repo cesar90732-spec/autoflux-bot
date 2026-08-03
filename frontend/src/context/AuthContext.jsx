@@ -1,10 +1,9 @@
 // src/context/AuthContext.jsx
 // Estado global de autenticação. Guarda o usuário logado, expõe
 // login/register/logout e restaura a sessão automaticamente ao
-// recarregar a página (via GET /api/auth/me com o token salvo).
+// recarregar a página (via GET /api/auth/me com o token salvo)
 import { createContext, useContext, useEffect, useState } from 'react';
 import api from '../api/client';
-
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
@@ -37,6 +36,13 @@ export function AuthProvider({ children }) {
     return data.user;
   }
 
+async function loginWithGoogle(credential) {
+    const { data } = await api.post('/auth/google', { credential });
+    localStorage.setItem('autoflux_token', data.token);
+    setUser(data.user);
+    return data.user;
+  }
+
   async function register({ companyName, name, email, password }) {
     const { data } = await api.post('/auth/register', { companyName, name, email, password });
     localStorage.setItem('autoflux_token', data.token);
@@ -50,7 +56,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, loginWithGoogle, register, logout }}>
       {children}
     </AuthContext.Provider>
   );

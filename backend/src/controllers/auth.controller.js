@@ -4,6 +4,8 @@
 
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { OAuth2Client } = require('google-auth-library');
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const userModel = require('../models/user.model');
 const companyModel = require('../models/company.model');
 const logger = require('../utils/logger');
@@ -117,5 +119,47 @@ async function me(req, res, next) {
     next(err);
   }
 }
+// POST /api/auth/google
+// Recebe o "credential" (ID token) que o botão do Google devolve no
+// frontend, valida com o Google, e loga o usuário se o e-mail já
+// existir no sistema. Não cria empresa nova por esse fluxo.
+async function googleLogin(req, res, next) {
+  try {
+    const { credential } = req.body;
+    if (!credential) {
+      return res.status(400).json({ error: 'Token do Google não informado.' });
+    }
 
-module.exports = { register, login, me };
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    const email = payload.email;
+
+    const user = await userModel.findByEmail(email);
+    if (!user) {
+      return res.status(404).json({
+        error: 'Nenhuma conta encontrada com este e-mail do Google. Cadastre sua empresa primeiro.',
+      });
+    }
+
+    await userModel.setOnlineStatus(user.id, true);
+    const token = generateToken(user);
+
+    return res.json({
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        isPlatformAdmin: Boolean(user.is_platform_admin),
+      },
+    });
+  } catch (err) {
+    logger.error(`Falha no login com Google: ${err.message}`);
+    return res.status(401).json({ error: 'Não foi possível validar o login com Google.' });
+  }
+}
+module.exports = { register, login, me, googleLogin };
