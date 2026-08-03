@@ -11,7 +11,7 @@ RUN apk add --no-cache postgresql16-client
 # Copia apenas os manifests primeiro para aproveitar o cache de camadas
 # do Docker — só reinstala dependências se package.json mudar.
 COPY package*.json ./
-RUN npm install --omit=dev
+RUN npm install --omit=dev --legacy-peer-deps
 
 COPY . .
 
