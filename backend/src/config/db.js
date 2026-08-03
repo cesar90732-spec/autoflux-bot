@@ -8,11 +8,10 @@ const logger = require('../utils/logger');
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  // Máximo de conexões simultâneas no pool. Ajuste conforme o tamanho
-  // do seu servidor Postgres.
   max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 5000,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
 });
 
 // Loga erros inesperados em clientes ociosos do pool (ex: conexão caiu).
