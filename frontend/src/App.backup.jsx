@@ -1,3 +1,7 @@
+// src/App.jsx
+// Define as rotas da aplicação. Rotas além de /login, /register e
+// /dashboard (contatos, conversas, whatsapp, etc.) serão adicionadas
+// aqui conforme cada etapa do backend for implementada.
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -9,7 +13,6 @@ import Configuracoes from './pages/Configuracoes';
 import Conversas from './pages/Conversas';
 import Contatos from './pages/Contatos';
 import Relatorios from './pages/Relatorios';
-import Admin from './pages/Admin';
 import ProtectedRoute from './components/ProtectedRoute';
 
 export default function App() {
@@ -17,7 +20,6 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
-
       <Route
         path="/dashboard"
         element={
@@ -26,16 +28,6 @@ export default function App() {
           </ProtectedRoute>
         }
       />
-
-      <Route
-        path="/admin"
-        element={
-          <ProtectedRoute>
-            <Admin />
-          </ProtectedRoute>
-        }
-      />
-
       <Route
         path="/whatsapp"
         element={
@@ -44,7 +36,6 @@ export default function App() {
           </ProtectedRoute>
         }
       />
-
       <Route
         path="/catalogo"
         element={
@@ -53,7 +44,6 @@ export default function App() {
           </ProtectedRoute>
         }
       />
-
       <Route
         path="/transmissoes"
         element={
@@ -62,7 +52,6 @@ export default function App() {
           </ProtectedRoute>
         }
       />
-
       <Route
         path="/conversas"
         element={
@@ -71,7 +60,6 @@ export default function App() {
           </ProtectedRoute>
         }
       />
-
       <Route
         path="/contatos"
         element={
@@ -80,7 +68,6 @@ export default function App() {
           </ProtectedRoute>
         }
       />
-
       <Route
         path="/relatorios"
         element={
@@ -89,7 +76,6 @@ export default function App() {
           </ProtectedRoute>
         }
       />
-
       <Route
         path="/configuracoes"
         element={
@@ -98,7 +84,6 @@ export default function App() {
           </ProtectedRoute>
         }
       />
-
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
