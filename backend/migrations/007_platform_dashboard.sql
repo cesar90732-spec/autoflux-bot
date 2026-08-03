@@ -1,0 +1,3 @@
+ALTER TABLE companies
+  ADD COLUMN IF NOT EXISTS payment_status VARCHAR(20) NOT NULL DEFAULT 'em_dia',
+  ADD COLUMN IF NOT EXISTS plan_renews_at DATE;
