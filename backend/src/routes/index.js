@@ -18,7 +18,7 @@ const scheduledMessageRoutes = require('./scheduledMessage.routes');
 const aiRoutes = require('./ai.routes');
 const reportRoutes = require('./report.routes');
 const backupRoutes = require('./backup.routes');
-
+const platformRoutes = require('./platform.routes');
 const router = Router();
 
 router.use('/auth', authRoutes);
@@ -34,7 +34,7 @@ router.use('/scheduled-messages', scheduledMessageRoutes);
 router.use('/ai', aiRoutes);
 router.use('/reports', reportRoutes);
 router.use('/backups', backupRoutes);
-
+router.use('/platform', platformRoutes);
 router.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'autoflux-backend', timestamp: new Date().toISOString() });
 });
