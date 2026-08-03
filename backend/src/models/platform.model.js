@@ -2,11 +2,21 @@
 const { query } = require('../config/db');
 
 async function listCompanies() {
-  const result = await query(
-    `SELECT id, name, plan, payment_status, plan_renews_at, created_at
-     FROM companies
-     ORDER BY created_at DESC`
-  );
+  const result = await query(`
+    SELECT
+      c.id,
+      c.name,
+      c.plan,
+      c.payment_status,
+      c.plan_renews_at,
+      (c.ai_settings->>'enabled')::boolean AS ai_enabled,
+      c.ai_settings->>'provider' AS ai_provider,
+      c.ai_settings->>'mode' AS ai_mode,
+      (SELECT COUNT(*) FROM users u WHERE u.company_id = c.id AND u.role = 'employee') AS attendants_count,
+      (SELECT status FROM whatsapp_sessions ws WHERE ws.company_id = c.id) AS whatsapp_status
+    FROM companies c
+    ORDER BY c.created_at DESC
+  `);
   return result.rows;
 }
 
