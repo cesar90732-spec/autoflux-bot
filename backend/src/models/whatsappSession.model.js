@@ -9,7 +9,7 @@ const { query } = require('../config/db');
 async function upsertStatus(companyId, { status, phoneNumber = null }) {
   const result = await query(
     `INSERT INTO whatsapp_sessions (company_id, status, phone_number, connected_at)
-     VALUES ($1, $2, $3, CASE WHEN $2::text = 'connected' THEN now() ELSE NULL END)
+     VALUES ($1, $2::text, $3, CASE WHEN $2::text = 'connected' THEN now() ELSE NULL END)
      ON CONFLICT (company_id) DO UPDATE
        SET status = EXCLUDED.status,
            phone_number = COALESCE(EXCLUDED.phone_number, whatsapp_sessions.phone_number),
