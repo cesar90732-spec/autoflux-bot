@@ -33,7 +33,7 @@ const connections = new Map();
 
 // Logger silencioso para o Baileys (ele é MUITO verboso por padrão).
 // Erros continuam sendo logados pelo nosso winston nos handlers abaixo.
-const baileysLogger = pino({ level: 'silent' });
+const baileysLogger = pino({ level: 'debug' });
 
 function getConnectionState(companyId) {
   return connections.get(companyId) || { status: 'disconnected', qrDataUrl: null };
@@ -67,7 +67,9 @@ async function startConnection(companyId) {
   await sessionModel.upsertStatus(companyId, { status: 'connecting' });
 
   const { state, saveCreds } = await useMultiFileAuthState(sessionPath(companyId));
-  const { version } = await fetchLatestBaileysVersion();
+  logger.info(`Buscando versão do Baileys para empresa ${companyId}...`);
+const { version } = await fetchLatestBaileysVersion();
+logger.info(`Versão obtida: ${version}`);
 
   const sock = makeWASocket({
     version,
