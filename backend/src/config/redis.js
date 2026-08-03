@@ -7,7 +7,7 @@
 const { createClient } = require('redis');
 const logger = require('../utils/logger');
 
-const useTls = process.env.REDIS_URL?.startsWith('rediss://');
+const useTls = !/^redis:\/\/(localhost|127\.0\.0\.1)/.test(process.env.REDIS_URL || '');
 
 const redisClient = createClient({
   url: process.env.REDIS_URL,
@@ -28,7 +28,12 @@ redisClient.on('connect', () => {
 // A lib "redis" v4+ exige conexão explícita (não conecta sozinha).
 async function connectRedis() {
   if (!redisClient.isOpen) {
-    await redisClient.connect();
+    await Promise.race([
+      redisClient.connect(),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Timeout ao conectar no Redis (5s)')), 5000)
+      ),
+    ]);
   }
 }
 
