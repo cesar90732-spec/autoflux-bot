@@ -1,0 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Transição suave entre tema claro/escuro em toda a aplicação */
+* {
+  transition-property: background-color, border-color, color;
+  transition-duration: 150ms;
+}

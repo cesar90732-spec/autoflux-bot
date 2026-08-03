@@ -1,0 +1,21 @@
+# Ambiente
+.env
+
+# Dependências
+node_modules/
+
+# Build
+dist/
+build/
+
+# Logs
+backend/logs/*.log
+
+# Sessões do WhatsApp (Etapa 2)
+backend/sessions/
+
+# Backups
+backend/backups/
+
+# Sistema
+.DS_Store

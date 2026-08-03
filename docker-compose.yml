@@ -1,0 +1,76 @@
+# docker-compose.yml
+# Orquestra os 4 serviços do AutoFlux: banco de dados, fila/cache,
+# backend (API) e frontend (SPA servida via nginx).
+#
+# Uso:
+#   1. cp .env.example .env    (e preencha os valores)
+#   2. docker compose up -d --build
+#   3. docker compose exec backend npm run migrate   (roda as migrations)
+
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: autoflux_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - '5432:5432'
+    volumes:
+      - autoflux_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER} -d ${DB_NAME}']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: autoflux_redis
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    volumes:
+      - autoflux_redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    container_name: autoflux_backend
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - '3333:3333'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      # Persiste logs, uploads, sessões do WhatsApp e backups fora do container
+      - ./backend/logs:/usr/src/app/logs
+      - ./backend/uploads:/usr/src/app/uploads
+      - ./backend/backups:/usr/src/app/backups
+      - autoflux_wa_sessions:/usr/src/app/sessions
+
+  frontend:
+    build: ./frontend
+    container_name: autoflux_frontend
+    restart: unless-stopped
+    ports:
+      - '5173:80'
+    depends_on:
+      - backend
+
+volumes:
+  autoflux_pg_data:
+  autoflux_redis_data:
+  autoflux_wa_sessions:
