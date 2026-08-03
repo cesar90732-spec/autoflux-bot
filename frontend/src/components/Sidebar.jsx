@@ -28,7 +28,7 @@ const NAV_ITEMS = [
 export default function Sidebar() {
   const { user, logout } = useAuth();
 
-  const isPlatformAdmin = user?.is_platform_admin === true;
+  const isPlatformAdmin = user?.isPlatformAdmin === true;
 
   return (
     <aside className="flex h-screen w-64 flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
