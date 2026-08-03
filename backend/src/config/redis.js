@@ -7,11 +7,12 @@
 const { createClient } = require('redis');
 const logger = require('../utils/logger');
 
+const useTls = process.env.REDIS_URL?.startsWith('rediss://');
+
 const redisClient = createClient({
   url: process.env.REDIS_URL,
   socket: {
-    tls: true,
-    rejectUnauthorized: false,
+    ...(useTls ? { tls: true, rejectUnauthorized: false } : {}),
     reconnectStrategy: (retries) => Math.min(retries * 100, 3000),
   },
 });
