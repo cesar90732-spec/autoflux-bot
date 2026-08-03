@@ -9,6 +9,11 @@ const logger = require('../utils/logger');
 
 const redisClient = createClient({
   url: process.env.REDIS_URL,
+  socket: {
+    tls: true,
+    rejectUnauthorized: false,
+    reconnectStrategy: (retries) => Math.min(retries * 100, 3000),
+  },
 });
 
 redisClient.on('error', (err) => {
