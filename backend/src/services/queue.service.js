@@ -17,10 +17,13 @@ const whatsappService = require('./whatsapp.service');
 const QUEUE_NAME = 'scheduled-messages';
 
 // BullMQ exige a conexão no formato aceito pelo ioredis (host/port),
-// não a URL diretamente — por isso parseamos aqui.
+// não a URL diretamente — por isso parseamos a REDIS_URL aqui.
+const redisUrl = new URL(process.env.REDIS_URL || 'redis://localhost:6379');
 const connection = {
-  host: process.env.REDIS_HOST || 'localhost',
-  port: Number(process.env.REDIS_PORT) || 6379,
+  host: redisUrl.hostname,
+  port: Number(redisUrl.port) || 6379,
+  password: redisUrl.password || undefined,
+  tls: redisUrl.protocol === 'rediss:' ? {} : undefined,
 };
 
 const scheduledMessagesQueue = new Queue(QUEUE_NAME, { connection });
