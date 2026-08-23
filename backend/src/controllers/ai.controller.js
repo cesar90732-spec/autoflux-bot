@@ -13,7 +13,6 @@ const conversationModel = require('../models/conversation.model');
 const messageModel = require('../models/message.model');
 const aiService = require('../services/ai/ai.service');
 
-const VALID_PROVIDERS = ['openai', 'gemini', 'claude', 'groq'];
 const VALID_MODES = ['suggest', 'auto'];
 
 async function getSettings(req, res, next) {
@@ -21,20 +20,22 @@ async function getSettings(req, res, next) {
     const company = await companyModel.findById(req.user.companyId);
     const settings = aiService.resolveSettings(company);
     // Nunca devolve a chave de API para o frontend — só indica se está definida.
-    const { api_key, ...safeSettings } = settings;
+    const { api_key, provider, model, ...safeSettings } = settings;
     return res.json({ settings: { ...safeSettings, has_api_key: Boolean(aiService.resolveApiKey(settings)) } });
   } catch (err) {
     next(err);
   }
 }
 
+// Provedor/modelo/chave de IA são fixos no sistema (Groq, configurado
+// via variável de ambiente no servidor) — o cliente nunca escolhe isso,
+// então essas opções nem chegam a existir no formulário do frontend.
+// Este endpoint só aceita o que a empresa de fato controla: se a IA está
+// ligada, o modo de operação, a persona e os parâmetros de geração.
 async function updateSettings(req, res, next) {
   try {
-    const { enabled, mode, provider, model, apiKey, persona, temperature, maxHistoryMessages } = req.body;
+    const { enabled, mode, persona, temperature, maxHistoryMessages } = req.body;
 
-    if (provider && !VALID_PROVIDERS.includes(provider)) {
-      return res.status(400).json({ error: `Provedor inválido. Use um de: ${VALID_PROVIDERS.join(', ')}.` });
-    }
     if (mode && !VALID_MODES.includes(mode)) {
       return res.status(400).json({ error: `Modo inválido. Use um de: ${VALID_MODES.join(', ')}.` });
     }
@@ -49,18 +50,13 @@ async function updateSettings(req, res, next) {
       ...current,
       ...(enabled !== undefined && { enabled: Boolean(enabled) }),
       ...(mode && { mode }),
-      ...(provider && { provider }),
-      ...(model && { model }),
-      // Só sobrescreve a chave se o campo veio preenchido — string vazia
-      // explicitamente limpa a chave da empresa (volta a usar a do .env).
-      ...(apiKey !== undefined && { api_key: apiKey || null }),
       ...(persona !== undefined && { persona }),
       ...(temperature !== undefined && { temperature }),
       ...(maxHistoryMessages !== undefined && { max_history_messages: maxHistoryMessages }),
     };
 
     const result = await companyModel.updateAiSettings(req.user.companyId, updated);
-    const { api_key, ...safeSettings } = result.ai_settings;
+    const { api_key, provider, model, ...safeSettings } = result.ai_settings;
     return res.json({ settings: { ...safeSettings, has_api_key: Boolean(aiService.resolveApiKey(result.ai_settings)) } });
   } catch (err) {
     next(err);

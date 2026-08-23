@@ -15,13 +15,6 @@ import ThemeToggle from '../components/ThemeToggle';
 import api from '../api/client';
 import { useAuth } from '../context/AuthContext';
 
-const PROVIDERS = [
-  { value: 'groq', label: 'Groq (Llama)' },
-  { value: 'openai', label: 'OpenAI (GPT)' },
-  { value: 'gemini', label: 'Google Gemini' },
-  { value: 'claude', label: 'Anthropic Claude' },
-];
-
 const MODES = [
   {
     value: 'suggest',
@@ -38,9 +31,6 @@ const MODES = [
 const EMPTY_FORM = {
   enabled: false,
   mode: 'suggest',
-  provider: 'groq',
-  model: 'llama-3.3-70b-versatile',
-  apiKey: '',
   persona: '',
   temperature: 0.5,
   maxHistoryMessages: 10,
@@ -51,7 +41,6 @@ export default function Configuracoes() {
   const isAdmin = user?.role === 'admin';
 
   const [form, setForm] = useState(EMPTY_FORM);
-  const [hasApiKey, setHasApiKey] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState(null);
@@ -69,14 +58,10 @@ export default function Configuracoes() {
         setForm({
           enabled: data.settings.enabled,
           mode: data.settings.mode,
-          provider: data.settings.provider,
-          model: data.settings.model,
-          apiKey: '',
           persona: data.settings.persona || '',
           temperature: data.settings.temperature,
           maxHistoryMessages: data.settings.max_history_messages,
         });
-        setHasApiKey(data.settings.has_api_key);
       } catch (err) {
         setError(err.response?.data?.error || 'Não foi possível carregar as configurações de IA.');
       } finally {
@@ -92,9 +77,7 @@ export default function Configuracoes() {
     setError(null);
     setSavedAt(null);
     try {
-      const { data } = await api.put('/ai/settings', form);
-      setHasApiKey(data.settings.has_api_key);
-      setForm((prev) => ({ ...prev, apiKey: '' }));
+      await api.put('/ai/settings', form);
       setSavedAt(new Date());
     } catch (err) {
       setError(err.response?.data?.error || 'Não foi possível salvar as configurações de IA.');
@@ -182,49 +165,6 @@ export default function Configuracoes() {
                     </label>
                   ))}
                 </div>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Provedor</label>
-                  <select
-                    value={form.provider}
-                    onChange={(e) => setForm({ ...form, provider: e.target.value })}
-                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                  >
-                    {PROVIDERS.map((p) => (
-                      <option key={p.value} value={p.value}>
-                        {p.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Modelo</label>
-                  <input
-                    type="text"
-                    value={form.model}
-                    onChange={(e) => setForm({ ...form, model: e.target.value })}
-                    placeholder="ex: gpt-4o-mini"
-                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
-                  Chave de API {hasApiKey && <span className="text-xs font-normal text-emerald-600 dark:text-emerald-400">(já configurada)</span>}
-                </label>
-                <input
-                  type="password"
-                  value={form.apiKey}
-                  onChange={(e) => setForm({ ...form, apiKey: e.target.value })}
-                  placeholder={hasApiKey ? 'Deixe em branco para manter a chave atual' : 'Cole aqui a chave do provedor escolhido'}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                />
-                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                  Se deixada em branco, usamos a chave global configurada no servidor (variável de ambiente).
-                </p>
               </div>
 
               <div>
