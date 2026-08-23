@@ -1,3 +1,251 @@
+#!/data/data/com.termux/files/usr/bin/bash
+# aplicar-exclusao-dados.sh
+# Adiciona o fluxo de solicitacao de exclusao de dados (LGPD).
+# Rode DENTRO da pasta raiz do repo.
+set -e
+
+echo "Aplicando..."
+
+mkdir -p "$(dirname "backend/migrations/013_data_deletion_request.sql")"
+cat > "backend/migrations/013_data_deletion_request.sql" << 'AUTOFLUX_EOF'
+-- 013_data_deletion_request.sql
+-- Direito de exclusão (LGPD): a empresa pode solicitar a exclusão dos
+-- seus dados a qualquer momento. Fica marcado aqui em vez de apagar na
+-- hora — o admin da plataforma revisa e executa a exclusão de fato
+-- (evita perda de dados por clique acidental, e dá chance de resolver
+-- pendência de cobrança antes).
+ALTER TABLE companies
+    ADD COLUMN IF NOT EXISTS deletion_requested_at TIMESTAMPTZ;
+AUTOFLUX_EOF
+echo "  - backend/migrations/013_data_deletion_request.sql"
+
+mkdir -p "$(dirname "backend/src/models/company.model.js")"
+cat > "backend/src/models/company.model.js" << 'AUTOFLUX_EOF'
+// src/models/company.model.js
+// Camada de acesso a dados para "companies" (cada empresa cliente do SaaS).
+
+const { query } = require('../config/db');
+
+const TRIAL_DAYS = 7;
+
+// Onboarding automático: toda empresa nova nasce em teste grátis de
+// TRIAL_DAYS dias (payment_status = 'trial') e já com o telefone de
+// cobrança salvo (se informado no cadastro). Isso é o que permite o
+// billingReminder.job assumir a cobrança sozinho quando o trial acaba,
+// sem um admin da plataforma precisar configurar nada na mão.
+async function create({ name, document, billingPhone, billingName }) {
+  const trialEndsAt = new Date();
+  trialEndsAt.setDate(trialEndsAt.getDate() + TRIAL_DAYS);
+
+  const result = await query(
+    `INSERT INTO companies (name, document, billing_phone, billing_name, payment_status, trial_ends_at)
+     VALUES ($1, $2, $3, $4, 'trial', $5)
+     RETURNING id, name, document, business_hours, payment_status, trial_ends_at, created_at`,
+    [name, document || null, billingPhone || null, billingName || null, trialEndsAt.toISOString().slice(0, 10)]
+  );
+  return result.rows[0];
+}
+
+async function findById(id) {
+  const result = await query('SELECT * FROM companies WHERE id = $1', [id]);
+  return result.rows[0] || null;
+}
+
+async function updateBusinessHours(id, businessHours) {
+  const result = await query(
+    `UPDATE companies SET business_hours = $1 WHERE id = $2
+     RETURNING id, name, business_hours`,
+    [JSON.stringify(businessHours), id]
+  );
+  return result.rows[0];
+}
+
+// Etapa 4: configuração de IA da empresa (provedor, modelo, persona,
+// modo automático/sugestão). Guardada como JSONB para não precisar de
+// migration nova a cada novo campo de configuração.
+async function updateAiSettings(id, aiSettings) {
+  const result = await query(
+    `UPDATE companies SET ai_settings = $1 WHERE id = $2
+     RETURNING id, name, ai_settings`,
+    [JSON.stringify(aiSettings), id]
+  );
+  return result.rows[0];
+}
+
+// Direito de exclusão (LGPD). Marca o pedido com data/hora — não apaga
+// nada aqui, ver comentário na migration 013. requestedByUserId fica
+// registrado pra saber quem pediu, caso a empresa tenha mais de um
+// admin.
+async function requestDataDeletion(id) {
+  const result = await query(
+    `UPDATE companies SET deletion_requested_at = now() WHERE id = $1
+     RETURNING id, name, deletion_requested_at`,
+    [id]
+  );
+  return result.rows[0];
+}
+
+async function cancelDataDeletionRequest(id) {
+  const result = await query(
+    `UPDATE companies SET deletion_requested_at = NULL WHERE id = $1
+     RETURNING id, name, deletion_requested_at`,
+    [id]
+  );
+  return result.rows[0];
+}
+
+module.exports = {
+  create,
+  findById,
+  updateBusinessHours,
+  updateAiSettings,
+  requestDataDeletion,
+  cancelDataDeletionRequest,
+};
+AUTOFLUX_EOF
+echo "  - backend/src/models/company.model.js"
+
+mkdir -p "$(dirname "backend/src/controllers/company.controller.js")"
+cat > "backend/src/controllers/company.controller.js" << 'AUTOFLUX_EOF'
+// src/controllers/company.controller.js
+// Ações que a própria empresa faz sobre a sua conta (não confundir com
+// platform.controller.js, que é visão do admin da plataforma sobre
+// TODAS as empresas). Por enquanto só o pedido de exclusão de dados
+// (LGPD) — pode crescer com outras ações de "minha conta" depois.
+
+const companyModel = require('../models/company.model');
+
+// POST /api/companies/me/request-deletion
+// Só admin da empresa pode pedir (ver company.routes.js). Não apaga
+// nada na hora — só marca o pedido para o admin da plataforma revisar.
+async function requestDeletion(req, res, next) {
+  try {
+    const company = await companyModel.requestDataDeletion(req.user.companyId);
+    return res.json({
+      message: 'Pedido de exclusão registrado. Nossa equipe vai processar e confirmar em breve.',
+      company,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// POST /api/companies/me/cancel-deletion
+// Desiste do pedido (ex: empresa mudou de ideia antes de ser processado).
+async function cancelDeletion(req, res, next) {
+  try {
+    const company = await companyModel.cancelDataDeletionRequest(req.user.companyId);
+    return res.json({ message: 'Pedido de exclusão cancelado.', company });
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { requestDeletion, cancelDeletion };
+AUTOFLUX_EOF
+echo "  - backend/src/controllers/company.controller.js"
+
+mkdir -p "$(dirname "backend/src/routes/company.routes.js")"
+cat > "backend/src/routes/company.routes.js" << 'AUTOFLUX_EOF'
+// src/routes/company.routes.js
+const { Router } = require('express');
+const companyController = require('../controllers/company.controller');
+const { authenticate, requireRole } = require('../middleware/auth.middleware');
+
+const router = Router();
+
+router.use(authenticate, requireRole('admin'));
+
+router.post('/me/request-deletion', companyController.requestDeletion);
+router.post('/me/cancel-deletion', companyController.cancelDeletion);
+
+module.exports = router;
+AUTOFLUX_EOF
+echo "  - backend/src/routes/company.routes.js"
+
+mkdir -p "$(dirname "backend/src/routes/index.js")"
+cat > "backend/src/routes/index.js" << 'AUTOFLUX_EOF'
+// src/routes/index.js
+// Ponto único que agrega todos os módulos de rota sob o prefixo /api.
+// Nas próximas etapas, novos módulos (whatsapp, contacts, messages,
+// campaigns, reports, ai, etc.) serão importados e registrados aqui —
+// isso é o que torna a arquitetura "pronta para expansão".
+
+const { Router } = require('express');
+const authRoutes = require('./auth.routes');
+const whatsappRoutes = require('./whatsapp.routes');
+const keywordRoutes = require('./keyword.routes');
+const flowRoutes = require('./flow.routes');
+const contactRoutes = require('./contact.routes');
+const conversationRoutes = require('./conversation.routes');
+const mediaRoutes = require('./media.routes');
+const productRoutes = require('./product.routes');
+const broadcastListRoutes = require('./broadcastList.routes');
+const scheduledMessageRoutes = require('./scheduledMessage.routes');
+const aiRoutes = require('./ai.routes');
+const reportRoutes = require('./report.routes');
+const backupRoutes = require('./backup.routes');
+const platformRoutes = require('./platform.routes');
+const billingRoutes = require('./billing.routes');
+const companyRoutes = require('./company.routes');
+const router = Router();
+
+router.use('/auth', authRoutes);
+router.use('/whatsapp', whatsappRoutes);
+router.use('/keywords', keywordRoutes);
+router.use('/flows', flowRoutes);
+router.use('/contacts', contactRoutes);
+router.use('/conversations', conversationRoutes);
+router.use('/media', mediaRoutes);
+router.use('/products', productRoutes);
+router.use('/broadcast-lists', broadcastListRoutes);
+router.use('/scheduled-messages', scheduledMessageRoutes);
+router.use('/ai', aiRoutes);
+router.use('/reports', reportRoutes);
+router.use('/backups', backupRoutes);
+router.use('/platform', platformRoutes);
+router.use('/billing', billingRoutes);
+router.use('/companies', companyRoutes);
+router.get('/health', (req, res) => {
+  res.json({ status: 'ok', service: 'autoflux-backend', timestamp: new Date().toISOString() });
+});
+
+module.exports = router;
+AUTOFLUX_EOF
+echo "  - backend/src/routes/index.js"
+
+mkdir -p "$(dirname "backend/src/models/platform.model.js")"
+cat > "backend/src/models/platform.model.js" << 'AUTOFLUX_EOF'
+// src/models/platform.model.js
+const { query } = require('../config/db');
+
+async function listCompanies() {
+  const result = await query(`
+    SELECT
+      c.id,
+      c.name,
+      c.plan,
+      c.payment_status,
+      c.plan_renews_at,
+      c.trial_ends_at,
+      c.deletion_requested_at,
+      (c.ai_settings->>'enabled')::boolean AS ai_enabled,
+      c.ai_settings->>'provider' AS ai_provider,
+      c.ai_settings->>'mode' AS ai_mode,
+      (SELECT COUNT(*) FROM users u WHERE u.company_id = c.id AND u.role = 'employee') AS attendants_count,
+      (SELECT status FROM whatsapp_sessions ws WHERE ws.company_id = c.id) AS whatsapp_status
+    FROM companies c
+    ORDER BY c.created_at DESC
+  `);
+  return result.rows;
+}
+
+module.exports = { listCompanies };
+AUTOFLUX_EOF
+echo "  - backend/src/models/platform.model.js"
+
+mkdir -p "$(dirname "frontend/src/pages/Configuracoes.jsx")"
+cat > "frontend/src/pages/Configuracoes.jsx" << 'AUTOFLUX_EOF'
 // src/pages/Configuracoes.jsx
 // Painel de configuração administrativa: integração com IA (Etapa 4) e
 // backup automático do banco de dados (Etapa 5). Só administradores
@@ -469,3 +717,11 @@ function BackupsCard() {
     </motion.div>
   );
 }
+AUTOFLUX_EOF
+echo "  - frontend/src/pages/Configuracoes.jsx"
+
+echo ""
+echo "Pronto. Agora rode:"
+echo "  git add -A"
+echo "  git commit -m 'feat: fluxo de solicitacao de exclusao de dados (LGPD)'"
+echo "  git push origin main"

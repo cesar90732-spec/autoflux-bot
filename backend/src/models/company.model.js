@@ -49,4 +49,33 @@ async function updateAiSettings(id, aiSettings) {
   return result.rows[0];
 }
 
-module.exports = { create, findById, updateBusinessHours, updateAiSettings };
+// Direito de exclusão (LGPD). Marca o pedido com data/hora — não apaga
+// nada aqui, ver comentário na migration 013. requestedByUserId fica
+// registrado pra saber quem pediu, caso a empresa tenha mais de um
+// admin.
+async function requestDataDeletion(id) {
+  const result = await query(
+    `UPDATE companies SET deletion_requested_at = now() WHERE id = $1
+     RETURNING id, name, deletion_requested_at`,
+    [id]
+  );
+  return result.rows[0];
+}
+
+async function cancelDataDeletionRequest(id) {
+  const result = await query(
+    `UPDATE companies SET deletion_requested_at = NULL WHERE id = $1
+     RETURNING id, name, deletion_requested_at`,
+    [id]
+  );
+  return result.rows[0];
+}
+
+module.exports = {
+  create,
+  findById,
+  updateBusinessHours,
+  updateAiSettings,
+  requestDataDeletion,
+  cancelDataDeletionRequest,
+};

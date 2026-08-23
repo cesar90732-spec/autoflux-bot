@@ -10,6 +10,7 @@ async function listCompanies() {
       c.payment_status,
       c.plan_renews_at,
       c.trial_ends_at,
+      c.deletion_requested_at,
       (c.ai_settings->>'enabled')::boolean AS ai_enabled,
       c.ai_settings->>'provider' AS ai_provider,
       c.ai_settings->>'mode' AS ai_mode,
