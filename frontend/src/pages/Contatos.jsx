@@ -4,6 +4,7 @@
 // o backend ainda não tem endpoint para listar as tags disponíveis,
 // só para associar/remover (POST/DELETE /api/contacts/:id/tags).
 import { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Loader2, User } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import ThemeToggle from '../components/ThemeToggle';
@@ -70,20 +71,28 @@ export default function Contatos() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {contacts.map((c) => (
-                    <tr key={c.id}>
-                      <td className="flex items-center gap-2 px-5 py-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-50 text-brand-600 dark:bg-brand-900/40 dark:text-brand-300">
-                          <User size={14} />
-                        </div>
-                        <span className="font-medium text-slate-800 dark:text-slate-200">{c.name}</span>
-                      </td>
-                      <td className="px-5 py-3 text-slate-600 dark:text-slate-400">{c.phone_number}</td>
-                      <td className="px-5 py-3 text-slate-500 dark:text-slate-400">
-                        {new Date(c.created_at).toLocaleDateString('pt-BR')}
-                      </td>
-                    </tr>
-                  ))}
+                  <AnimatePresence>
+                    {contacts.map((c, i) => (
+                      <motion.tr
+                        key={c.id}
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2, delay: Math.min(i * 0.03, 0.3) }}
+                      >
+                        <td className="flex items-center gap-2 px-5 py-3">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-50 text-brand-600 dark:bg-brand-900/40 dark:text-brand-300">
+                            <User size={14} />
+                          </div>
+                          <span className="font-medium text-slate-800 dark:text-slate-200">{c.name}</span>
+                        </td>
+                        <td className="px-5 py-3 text-slate-600 dark:text-slate-400">{c.phone_number}</td>
+                        <td className="px-5 py-3 text-slate-500 dark:text-slate-400">
+                          {new Date(c.created_at).toLocaleDateString('pt-BR')}
+                        </td>
+                      </motion.tr>
+                    ))}
+                  </AnimatePresence>
                 </tbody>
               </table>
             )}

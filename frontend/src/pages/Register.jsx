@@ -11,7 +11,7 @@ import ThemeToggle from '../components/ThemeToggle';
 export default function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ companyName: '', name: '', email: '', password: '' });
+  const [form, setForm] = useState({ companyName: '', name: '', email: '', password: '', billingPhone: '' });
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -52,8 +52,11 @@ export default function Register() {
         <h1 className="mb-1 text-xl font-semibold text-slate-900 dark:text-white">
           Cadastre sua empresa
         </h1>
-        <p className="mb-6 text-sm text-slate-500 dark:text-slate-400">
+        <p className="mb-1 text-sm text-slate-500 dark:text-slate-400">
           Você será o administrador desta conta.
+        </p>
+        <p className="mb-6 text-xs text-slate-400 dark:text-slate-500">
+          7 dias grátis — sem cobrança agora.
         </p>
 
         {error && (
@@ -67,6 +70,12 @@ export default function Register() {
             { key: 'companyName', label: 'Nome da empresa', type: 'text', placeholder: 'Barbearia do João' },
             { key: 'name', label: 'Seu nome', type: 'text', placeholder: 'João Silva' },
             { key: 'email', label: 'E-mail', type: 'email', placeholder: 'voce@empresa.com' },
+            {
+              key: 'billingPhone',
+              label: 'WhatsApp para avisos de cobrança',
+              type: 'tel',
+              placeholder: '11987654321 (com DDD)',
+            },
             { key: 'password', label: 'Senha (mín. 8 caracteres)', type: 'password', placeholder: '••••••••' },
           ].map((field) => (
             <div key={field.key}>

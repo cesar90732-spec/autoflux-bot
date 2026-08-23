@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -57,24 +58,30 @@ export default function Sidebar() {
   return (
     <>
       {/* Botão hambúrguer — só aparece em telas pequenas (abaixo de md) */}
-      <button
+      <motion.button
+        whileTap={{ scale: 0.9 }}
         onClick={() => setMobileOpen(true)}
         aria-label="Abrir menu"
         className="fixed left-3 top-3 z-30 flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm md:hidden dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200"
       >
         <Menu size={20} />
-      </button>
+      </motion.button>
 
       {/* Fundo escurecido atrás do menu aberto no mobile — toca fora pra fechar */}
-      {mobileOpen && (
-        <div
-          onClick={() => setMobileOpen(false)}
-          className="fixed inset-0 z-40 bg-black/50 md:hidden"
-        />
-      )}
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setMobileOpen(false)}
+            className="fixed inset-0 z-40 bg-black/50 md:hidden"
+          />
+        )}
+      </AnimatePresence>
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex h-screen w-64 flex-col border-r border-slate-200 bg-white transition-transform duration-200 ease-in-out dark:border-slate-800 dark:bg-slate-900 md:static md:z-auto md:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex h-screen w-64 flex-col border-r border-slate-200 bg-white transition-transform duration-300 ease-out dark:border-slate-800 dark:bg-slate-900 md:static md:z-auto md:translate-x-0 ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >

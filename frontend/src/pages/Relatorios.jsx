@@ -2,6 +2,7 @@
 // Página dedicada de relatórios: reaproveita GET /api/reports/overview
 // (mesma fonte do Dashboard) e adiciona exportação em CSV/PDF.
 import { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 import {
   ResponsiveContainer,
   LineChart,
@@ -101,23 +102,29 @@ export default function Relatorios() {
           ) : (
             <>
               <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <StatCard icon={MessageSquare} label="Mensagens enviadas (7 dias)" value={stats?.messagesSent ?? '—'} />
-                <StatCard icon={Users} label="Clientes atendidos (7 dias)" value={stats?.customersServed ?? '—'} />
-                <StatCard icon={Clock} label="Tempo médio de resposta" value={stats?.avgResponseTime ?? '—'} />
-                <StatCard icon={UserCheck} label="Funcionários online" value={stats?.employeesOnline ?? '—'} />
+                <StatCard icon={MessageSquare} label="Mensagens enviadas (7 dias)" value={stats?.messagesSent ?? '—'} delay={0} />
+                <StatCard icon={Users} label="Clientes atendidos (7 dias)" value={stats?.customersServed ?? '—'} delay={0.05} />
+                <StatCard icon={Clock} label="Tempo médio de resposta" value={stats?.avgResponseTime ?? '—'} delay={0.1} />
+                <StatCard icon={UserCheck} label="Funcionários online" value={stats?.employeesOnline ?? '—'} delay={0.15} />
               </div>
 
               <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <StatCard icon={MessageSquare} label="Conversas em aberto" value={stats?.conversationsOpen ?? '—'} />
-                <StatCard icon={MessageSquare} label="Conversas encerradas" value={stats?.conversationsClosed ?? '—'} />
+                <StatCard icon={MessageSquare} label="Conversas em aberto" value={stats?.conversationsOpen ?? '—'} delay={0.2} />
+                <StatCard icon={MessageSquare} label="Conversas encerradas" value={stats?.conversationsClosed ?? '—'} delay={0.25} />
                 <StatCard
                   icon={Sparkles}
                   label="Respostas do bot geradas por IA"
                   value={stats?.aiUsage ? `${stats.aiUsage.aiPercentage}%` : '—'}
+                  delay={0.3}
                 />
               </div>
 
-              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.35 }}
+                className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900"
+              >
                 <h2 className="mb-4 text-sm font-semibold text-slate-700 dark:text-slate-300">
                   Mensagens por dia (última semana)
                 </h2>
@@ -130,7 +137,7 @@ export default function Relatorios() {
                     <Line type="monotone" dataKey="mensagens" stroke="#2563eb" strokeWidth={2} dot={{ r: 3 }} />
                   </LineChart>
                 </ResponsiveContainer>
-              </div>
+              </motion.div>
             </>
           )}
         </div>

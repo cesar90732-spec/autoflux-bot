@@ -18,6 +18,12 @@ router.post(
     body('password')
       .isLength({ min: 8 })
       .withMessage('A senha deve ter no mínimo 8 caracteres.'),
+    body('billingPhone')
+      .trim()
+      .notEmpty()
+      .withMessage('Informe o WhatsApp para onde vão os avisos de cobrança.')
+      .isLength({ min: 10 })
+      .withMessage('Informe o telefone com DDD (ex: 11987654321).'),
   ],
   validate,
   authController.register

@@ -3,11 +3,13 @@
 // enviadas, clientes atendidos, tempo médio de resposta, etc.).
 import { motion } from 'framer-motion';
 
-export default function StatCard({ icon: Icon, label, value, trend }) {
+export default function StatCard({ icon: Icon, label, value, trend, delay = 0 }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25, delay }}
+      whileHover={{ y: -3 }}
       className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900"
     >
       <div className="mb-3 flex items-center justify-between">

@@ -26,9 +26,18 @@ async function runOnce() {
       const charge = await generateChargeForCompany(company);
       const valueReais = (company.plan_price_cents / 100).toFixed(2).replace('.', ',');
 
+      // Mensagem muda conforme o motivo da cobrança: quem está saindo
+      // do teste grátis recebe um texto de "vire cliente", não de
+      // "mensalidade atrasada" — a empresa nunca pagou nada ainda.
+      const intro =
+        company.payment_status === 'trial'
+          ? `Olá! Seu teste grátis do AutoFlux está terminando.`
+          : `Olá! Sua mensalidade do AutoFlux (R$ ${valueReais}) está vencendo.`;
+
       const text =
-        `Olá! Sua mensalidade do AutoFlux (R$ ${valueReais}) está vencendo.\n\n` +
-        `Pague com Pix — copia e cola o código abaixo no seu banco ou no PicPay:\n\n` +
+        `${intro}\n\n` +
+        `Para continuar usando, é só pagar o plano (R$ ${valueReais}) com Pix — ` +
+        `copia e cola o código abaixo no seu banco ou no PicPay:\n\n` +
         `${charge.payment_url}\n\n` +
         `Assim que o pagamento cair, seu acesso é renovado.`;
 

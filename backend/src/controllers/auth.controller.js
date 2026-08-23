@@ -32,14 +32,18 @@ function generateToken(user) {
 // (POST /api/users), restrita a admins — ver users.controller na Etapa 3.
 async function register(req, res, next) {
   try {
-    const { companyName, name, email, password } = req.body;
+    const { companyName, name, email, password, billingPhone } = req.body;
 
     const existing = await userModel.findByEmail(email);
     if (existing) {
       return res.status(409).json({ error: 'Este e-mail já está cadastrado.' });
     }
 
-    const company = await companyModel.create({ name: companyName });
+    // billingPhone é o WhatsApp para onde vai o lembrete de cobrança
+    // quando o teste grátis acabar — coletado aqui pra empresa já
+    // nascer pronta pra régua de cobrança automática, sem precisar de
+    // um admin da plataforma configurar isso depois na mão.
+    const company = await companyModel.create({ name: companyName, billingPhone, billingName: name });
     const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
 
     const user = await userModel.create({
@@ -63,7 +67,7 @@ async function register(req, res, next) {
         role: user.role,
         isPlatformAdmin: Boolean(user.is_platform_admin),
       },
-      company: { id: company.id, name: company.name },
+      company: { id: company.id, name: company.name, trialEndsAt: company.trial_ends_at },
     });
   } catch (err) {
     next(err); // delega ao middleware central de tratamento de erros

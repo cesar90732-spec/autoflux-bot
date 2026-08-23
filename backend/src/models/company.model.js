@@ -3,11 +3,22 @@
 
 const { query } = require('../config/db');
 
-async function create({ name, document }) {
+const TRIAL_DAYS = 7;
+
+// Onboarding automático: toda empresa nova nasce em teste grátis de
+// TRIAL_DAYS dias (payment_status = 'trial') e já com o telefone de
+// cobrança salvo (se informado no cadastro). Isso é o que permite o
+// billingReminder.job assumir a cobrança sozinho quando o trial acaba,
+// sem um admin da plataforma precisar configurar nada na mão.
+async function create({ name, document, billingPhone, billingName }) {
+  const trialEndsAt = new Date();
+  trialEndsAt.setDate(trialEndsAt.getDate() + TRIAL_DAYS);
+
   const result = await query(
-    `INSERT INTO companies (name, document) VALUES ($1, $2)
-     RETURNING id, name, document, business_hours, created_at`,
-    [name, document || null]
+    `INSERT INTO companies (name, document, billing_phone, billing_name, payment_status, trial_ends_at)
+     VALUES ($1, $2, $3, $4, 'trial', $5)
+     RETURNING id, name, document, business_hours, payment_status, trial_ends_at, created_at`,
+    [name, document || null, billingPhone || null, billingName || null, trialEndsAt.toISOString().slice(0, 10)]
   );
   return result.rows[0];
 }

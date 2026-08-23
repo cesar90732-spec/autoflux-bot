@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Sidebar from '../components/Sidebar';
 import ThemeToggle from '../components/ThemeToggle';
 import StatCard from '../components/StatCard';
@@ -10,8 +11,6 @@ import { Building2, Loader2, Sparkles, Users, MessageCircle, QrCode, CheckCircle
 function ChargeModal({ charge, onClose, onConfirm, confirming }) {
   const [copied, setCopied] = useState(false);
 
-  if (!charge) return null;
-
   function handleCopy() {
     navigator.clipboard.writeText(charge.payment_url);
     setCopied(true);
@@ -19,8 +18,19 @@ function ChargeModal({ charge, onClose, onConfirm, confirming }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-sm rounded-xl bg-white p-5 dark:bg-slate-900">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.92, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        transition={{ duration: 0.2 }}
+        className="w-full max-w-sm rounded-xl bg-white p-5 dark:bg-slate-900"
+      >
         <div className="mb-4 flex items-center justify-between">
           <h3 className="font-semibold text-slate-900 dark:text-white">Cobrança Pix</h3>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
@@ -57,12 +67,31 @@ function ChargeModal({ charge, onClose, onConfirm, confirming }) {
             </button>
           )}
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
 
-function PaymentBadge({ status }) {
+function PaymentBadge({ status, trialEndsAt }) {
+  if (status === 'trial') {
+    const daysLeft = trialEndsAt
+      ? Math.ceil((new Date(trialEndsAt) - new Date()) / (1000 * 60 * 60 * 24))
+      : null;
+    const expired = daysLeft !== null && daysLeft < 0;
+    return (
+      <span
+        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${
+          expired
+            ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+            : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+        }`}
+      >
+        <span className={`h-1.5 w-1.5 rounded-full ${expired ? 'bg-red-500' : 'bg-amber-500'}`} />
+        {expired ? 'Teste vencido' : `Teste (${daysLeft}d)`}
+      </span>
+    );
+  }
+
   const isOk = status === 'em_dia';
   return (
     <span
@@ -167,10 +196,10 @@ export default function Admin() {
 
         <div className="p-6">
           <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard icon={Building2} label="Empresas" value={companies.length} />
-            <StatCard icon={Building2} label="Pagamentos em dia" value={`${emDia}/${companies.length}`} />
-            <StatCard icon={Sparkles} label="Usando IA" value={`${usandoIa}/${companies.length}`} />
-            <StatCard icon={Users} label="Atendentes (total)" value={totalAtendentes} />
+            <StatCard icon={Building2} label="Empresas" value={companies.length} delay={0} />
+            <StatCard icon={Building2} label="Pagamentos em dia" value={`${emDia}/${companies.length}`} delay={0.05} />
+            <StatCard icon={Sparkles} label="Usando IA" value={`${usandoIa}/${companies.length}`} delay={0.1} />
+            <StatCard icon={Users} label="Atendentes (total)" value={totalAtendentes} delay={0.15} />
           </div>
 
           <div className="rounded-xl border bg-white dark:border-slate-800 dark:bg-slate-900">
@@ -203,15 +232,18 @@ export default function Admin() {
                   </thead>
 
                   <tbody>
-                    {companies.map((company) => (
-                      <tr
+                    {companies.map((company, i) => (
+                      <motion.tr
                         key={company.id}
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.2, delay: Math.min(i * 0.03, 0.3) }}
                         className="border-b dark:border-slate-800"
                       >
                         <td className="p-3 font-medium">{company.name}</td>
                         <td className="hidden p-3 capitalize md:table-cell">{company.plan}</td>
                         <td className="p-3">
-                          <PaymentBadge status={company.payment_status} />
+                          <PaymentBadge status={company.payment_status} trialEndsAt={company.trial_ends_at} />
                         </td>
                         <td className="hidden p-3 text-slate-500 lg:table-cell">
                           {company.plan_renews_at
@@ -252,7 +284,7 @@ export default function Admin() {
                             <span className="sm:hidden">Cobrar</span>
                           </button>
                         </td>
-                      </tr>
+                      </motion.tr>
                     ))}
                   </tbody>
                 </table>
@@ -262,12 +294,16 @@ export default function Admin() {
         </div>
       </main>
 
-      <ChargeModal
-        charge={activeCharge}
-        onClose={() => setActiveCharge(null)}
-        onConfirm={handleConfirmPayment}
-        confirming={confirming}
-      />
+      <AnimatePresence>
+        {activeCharge && (
+          <ChargeModal
+            charge={activeCharge}
+            onClose={() => setActiveCharge(null)}
+            onConfirm={handleConfirmPayment}
+            confirming={confirming}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

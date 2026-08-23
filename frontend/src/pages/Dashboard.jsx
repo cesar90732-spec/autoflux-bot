@@ -2,6 +2,7 @@
 // Painel principal com métricas e gráficos, consumindo dados reais de
 // GET /api/reports/overview (Etapa 5).
 import { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 import { MessageSquare, Users, Clock, UserCheck, Loader2, Sparkles } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -41,7 +42,12 @@ export default function Dashboard() {
       <Sidebar />
 
       <main className="min-h-screen flex-1 bg-slate-50 dark:bg-slate-950">
-        <header className="flex items-center justify-between border-b border-slate-200 bg-white py-4 pl-16 pr-4 dark:border-slate-800 dark:bg-slate-900 md:px-6">
+        <motion.header
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="flex items-center justify-between border-b border-slate-200 bg-white py-4 pl-16 pr-4 dark:border-slate-800 dark:bg-slate-900 md:px-6"
+        >
           <div>
             <h1 className="text-lg font-semibold text-slate-900 dark:text-white">
               Olá, {user?.name?.split(' ')[0]} 👋
@@ -51,7 +57,7 @@ export default function Dashboard() {
             </p>
           </div>
           <ThemeToggle />
-        </header>
+        </motion.header>
 
         <div className="p-6">
           {loading ? (
@@ -65,21 +71,25 @@ export default function Dashboard() {
                   icon={MessageSquare}
                   label="Mensagens enviadas (7 dias)"
                   value={stats?.messagesSent ?? '—'}
+                  delay={0}
                 />
                 <StatCard
                   icon={Users}
                   label="Clientes atendidos (7 dias)"
                   value={stats?.customersServed ?? '—'}
+                  delay={0.05}
                 />
                 <StatCard
                   icon={Clock}
                   label="Tempo médio de resposta"
                   value={stats?.avgResponseTime ?? '—'}
+                  delay={0.1}
                 />
                 <StatCard
                   icon={UserCheck}
                   label="Funcionários online"
                   value={stats?.employeesOnline ?? '—'}
+                  delay={0.15}
                 />
               </div>
 
@@ -88,20 +98,27 @@ export default function Dashboard() {
                   icon={MessageSquare}
                   label="Conversas em aberto"
                   value={stats?.conversationsOpen ?? '—'}
+                  delay={0.2}
                 />
                 <StatCard
                   icon={MessageSquare}
                   label="Conversas encerradas"
                   value={stats?.conversationsClosed ?? '—'}
+                  delay={0.25}
                 />
                 <StatCard
                   icon={Sparkles}
                   label="Respostas do bot geradas por IA (7 dias)"
                   value={stats?.aiUsage ? `${stats.aiUsage.aiPercentage}%` : '—'}
+                  delay={0.3}
                 />
               </div>
 
-              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.35 }}
+                className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                 <h2 className="mb-4 text-sm font-semibold text-slate-700 dark:text-slate-300">
                   Mensagens por dia (última semana)
                 </h2>
@@ -122,7 +139,7 @@ export default function Dashboard() {
                     />
                   </LineChart>
                 </ResponsiveContainer>
-              </div>
+              </motion.div>
             </>
           )}
         </div>
