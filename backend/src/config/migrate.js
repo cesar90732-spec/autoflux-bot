@@ -59,10 +59,19 @@ async function runMigrations() {
   }
 
   logger.info('Todas as migrations foram processadas.');
-  await pool.end();
 }
 
-runMigrations().catch((err) => {
-  logger.error(`Migração abortada: ${err.message}`);
-  process.exit(1);
-});
+module.exports = { runMigrations };
+
+// Só fecha a conexão e chama process.exit quando este arquivo é
+// executado diretamente (`npm run migrate`). Quando é importado por
+// server.js para rodar as migrations automaticamente no boot, o pool
+// de conexões precisa continuar aberto para o resto da aplicação.
+if (require.main === module) {
+  runMigrations()
+    .then(() => pool.end())
+    .catch((err) => {
+      logger.error(`Migração abortada: ${err.message}`);
+      process.exit(1);
+    });
+}

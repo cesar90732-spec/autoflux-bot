@@ -16,6 +16,7 @@ import api from '../api/client';
 import { useAuth } from '../context/AuthContext';
 
 const PROVIDERS = [
+  { value: 'groq', label: 'Groq (Llama)' },
   { value: 'openai', label: 'OpenAI (GPT)' },
   { value: 'gemini', label: 'Google Gemini' },
   { value: 'claude', label: 'Anthropic Claude' },
@@ -37,8 +38,8 @@ const MODES = [
 const EMPTY_FORM = {
   enabled: false,
   mode: 'suggest',
-  provider: 'openai',
-  model: 'gpt-4o-mini',
+  provider: 'groq',
+  model: 'llama-3.3-70b-versatile',
   apiKey: '',
   persona: '',
   temperature: 0.5,

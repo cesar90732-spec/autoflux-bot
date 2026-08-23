@@ -13,7 +13,7 @@ const conversationModel = require('../models/conversation.model');
 const messageModel = require('../models/message.model');
 const aiService = require('../services/ai/ai.service');
 
-const VALID_PROVIDERS = ['openai', 'gemini', 'claude'];
+const VALID_PROVIDERS = ['openai', 'gemini', 'claude', 'groq'];
 const VALID_MODES = ['suggest', 'auto'];
 
 async function getSettings(req, res, next) {

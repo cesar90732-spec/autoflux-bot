@@ -6,6 +6,7 @@ const http = require('http');
 
 const app = require('./app');
 const { testConnection } = require('./config/db');
+const { runMigrations } = require('./config/migrate');
 const { connectRedis } = require('./config/redis');
 const billingReminderJob = require('./jobs/billingReminder.job');
 const logger = require('./utils/logger');
@@ -16,6 +17,13 @@ async function initialize() {
   // PostgreSQL é obrigatório
   await testConnection();
   logger.info('PostgreSQL conectado.');
+
+  // Aplica migrations pendentes automaticamente no boot. Evita o
+  // problema de "esquecer" de rodar `npm run migrate` manualmente
+  // depois de um deploy — cada arquivo só roda uma vez (controlado
+  // pela tabela schema_migrations), então é seguro rodar toda vez.
+  await runMigrations();
+  logger.info('Migrations verificadas/aplicadas.');
 
   // Redis é opcional
   try {

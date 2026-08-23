@@ -15,6 +15,7 @@
 const openaiProvider = require('./providers/openai.provider');
 const geminiProvider = require('./providers/gemini.provider');
 const claudeProvider = require('./providers/claude.provider');
+const groqProvider = require('./providers/groq.provider');
 const productModel = require('../../models/product.model');
 const logger = require('../../utils/logger');
 
@@ -22,19 +23,21 @@ const PROVIDERS = {
   openai: openaiProvider,
   gemini: geminiProvider,
   claude: claudeProvider,
+  groq: groqProvider,
 };
 
 const ENV_KEY_BY_PROVIDER = {
   openai: 'OPENAI_API_KEY',
   gemini: 'GEMINI_API_KEY',
   claude: 'ANTHROPIC_API_KEY',
+  groq: 'GROQ_API_KEY',
 };
 
 const DEFAULT_SETTINGS = {
   enabled: false,
   mode: 'suggest',
-  provider: 'openai',
-  model: 'gpt-4o-mini',
+  provider: 'groq',
+  model: 'llama-3.3-70b-versatile',
   api_key: null,
   persona: '',
   temperature: 0.5,
