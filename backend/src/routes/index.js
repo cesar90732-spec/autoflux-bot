@@ -19,6 +19,7 @@ const aiRoutes = require('./ai.routes');
 const reportRoutes = require('./report.routes');
 const backupRoutes = require('./backup.routes');
 const platformRoutes = require('./platform.routes');
+const billingRoutes = require('./billing.routes');
 const router = Router();
 
 router.use('/auth', authRoutes);
@@ -35,6 +36,7 @@ router.use('/ai', aiRoutes);
 router.use('/reports', reportRoutes);
 router.use('/backups', backupRoutes);
 router.use('/platform', platformRoutes);
+router.use('/billing', billingRoutes);
 router.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'autoflux-backend', timestamp: new Date().toISOString() });
 });

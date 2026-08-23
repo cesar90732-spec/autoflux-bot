@@ -7,6 +7,7 @@ const http = require('http');
 const app = require('./app');
 const { testConnection } = require('./config/db');
 const { connectRedis } = require('./config/redis');
+const billingReminderJob = require('./jobs/billingReminder.job');
 const logger = require('./utils/logger');
 
 const PORT = Number(process.env.PORT || 3333);
@@ -39,6 +40,13 @@ async function start() {
       logger.info(`Porta: ${PORT}`);
       logger.info('====================================');
     });
+
+    // Verifica cobranças vencendo 1x por dia (também roda 1x no start).
+    if (process.env.PIX_KEY) {
+      billingReminderJob.schedule();
+    } else {
+      logger.warn('PIX_KEY não configurada — job de cobrança automática desativado.');
+    }
 
     server.on('error', (err) => {
       logger.error(`Erro HTTP: ${err.stack || err.message}`);
