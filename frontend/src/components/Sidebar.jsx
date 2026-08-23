@@ -84,7 +84,11 @@ export default function Sidebar() {
           </p>
 
           <p className="truncate text-xs text-slate-500 dark:text-slate-400">
-            {isPlatformAdmin ? 'Administrador' : 'Funcionário'}
+            {isPlatformAdmin
+              ? 'Administrador'
+              : user?.role === 'admin'
+              ? 'Dono da empresa'
+              : 'Funcionário'}
           </p>
         </div>
 
