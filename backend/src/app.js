@@ -17,6 +17,13 @@ const logger = require('./utils/logger');
 
 const app = express();
 
+// Rota de "sinal de vida" simples, sem passar pelo rate limit nem pelo
+// prefixo /api. Serve pra um serviço externo gratuito (ex: cron-job.org,
+// UptimeRobot) pingar a cada 10-14 min e evitar que o Render "durma"
+// o backend no plano grátis — o que hoje causa a demora de até 1 minuto
+// quando alguém abre o site depois de um tempo sem uso.
+app.get('/health', (req, res) => res.status(200).json({ status: 'ok' }));
+
 // --- Segurança ---
 // Helmet define diversos headers HTTP de segurança (XSS, sniffing, etc.)
 app.use(helmet());

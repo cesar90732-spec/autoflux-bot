@@ -6,7 +6,46 @@
     <title>AutoFlux Atendimento</title>
   </head>
   <body class="bg-slate-50 dark:bg-slate-950">
-    <div id="root"></div>
+    <div id="root">
+      <!-- Splash inicial em HTML/CSS puro: aparece instantaneamente,
+           antes até do JavaScript carregar, pra nunca deixar a tela
+           branca enquanto o site (ou o servidor, se estiver "dormindo"
+           no plano grátis do Render) está iniciando. O React substitui
+           este conteúdo assim que monta. -->
+      <style>
+        .af-splash {
+          height: 100vh;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 14px;
+          font-family: system-ui, -apple-system, sans-serif;
+        }
+        .af-splash__spinner {
+          width: 36px;
+          height: 36px;
+          border: 4px solid #dbeafe;
+          border-top-color: #2563eb;
+          border-radius: 50%;
+          animation: af-spin 0.8s linear infinite;
+        }
+        .af-splash__text {
+          font-size: 13px;
+          color: #64748b;
+        }
+        @keyframes af-spin {
+          to { transform: rotate(360deg); }
+        }
+        @media (prefers-color-scheme: dark) {
+          .af-splash__text { color: #94a3b8; }
+        }
+      </style>
+      <div class="af-splash">
+        <div class="af-splash__spinner"></div>
+        <div class="af-splash__text">Carregando o AutoFlux...</div>
+      </div>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

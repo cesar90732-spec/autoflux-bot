@@ -7,7 +7,7 @@ const pixService = require('./pix.service');
 const billingModel = require('../models/billing.model');
 
 async function generateChargeForCompany(company) {
-  const amountCents = company.plan_price_cents || 4900;
+  const amountCents = company.plan_price_cents || 9700;
   const value = amountCents / 100;
 
   // txid curto e único o bastante pra não colidir, dentro do limite de 25
