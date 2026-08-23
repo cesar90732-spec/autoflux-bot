@@ -152,7 +152,7 @@ export default function Admin() {
       <Sidebar />
 
       <main className="min-h-screen flex-1 bg-slate-50 dark:bg-slate-950">
-        <header className="flex items-center justify-between border-b border-slate-200 bg-white px-6 py-4 dark:border-slate-800 dark:bg-slate-900">
+        <header className="flex items-center justify-between border-b border-slate-200 bg-white py-4 pl-16 pr-4 dark:border-slate-800 dark:bg-slate-900 md:px-6">
           <div>
             <h1 className="text-lg font-semibold text-slate-900 dark:text-white">
               Administração da Plataforma
@@ -192,12 +192,12 @@ export default function Admin() {
                   <thead>
                     <tr className="border-b dark:border-slate-800">
                       <th className="p-3 text-left">Empresa</th>
-                      <th className="p-3 text-left">Plano</th>
+                      <th className="hidden p-3 text-left md:table-cell">Plano</th>
                       <th className="p-3 text-left">Pagamento</th>
-                      <th className="p-3 text-left">Renovação</th>
-                      <th className="p-3 text-left">IA</th>
-                      <th className="p-3 text-left">Atendentes</th>
-                      <th className="p-3 text-left">WhatsApp</th>
+                      <th className="hidden p-3 text-left lg:table-cell">Renovação</th>
+                      <th className="hidden p-3 text-left lg:table-cell">IA</th>
+                      <th className="hidden p-3 text-left lg:table-cell">Atendentes</th>
+                      <th className="hidden p-3 text-left md:table-cell">WhatsApp</th>
                       <th className="p-3 text-left">Cobrança</th>
                     </tr>
                   </thead>
@@ -209,16 +209,16 @@ export default function Admin() {
                         className="border-b dark:border-slate-800"
                       >
                         <td className="p-3 font-medium">{company.name}</td>
-                        <td className="p-3 capitalize">{company.plan}</td>
+                        <td className="hidden p-3 capitalize md:table-cell">{company.plan}</td>
                         <td className="p-3">
                           <PaymentBadge status={company.payment_status} />
                         </td>
-                        <td className="p-3 text-slate-500">
+                        <td className="hidden p-3 text-slate-500 lg:table-cell">
                           {company.plan_renews_at
                             ? new Date(company.plan_renews_at).toLocaleDateString('pt-BR')
                             : '—'}
                         </td>
-                        <td className="p-3">
+                        <td className="hidden p-3 lg:table-cell">
                           {company.ai_enabled ? (
                             <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
                               <Sparkles size={14} />
@@ -228,27 +228,28 @@ export default function Admin() {
                             <span className="text-slate-400">Desativada</span>
                           )}
                         </td>
-                        <td className="p-3">
+                        <td className="hidden p-3 lg:table-cell">
                           <span className="inline-flex items-center gap-1">
                             <Users size={14} className="text-slate-400" />
                             {company.attendants_count}
                           </span>
                         </td>
-                        <td className="p-3">
+                        <td className="hidden p-3 md:table-cell">
                           <WhatsAppBadge status={company.whatsapp_status} />
                         </td>
                         <td className="p-3">
                           <button
                             onClick={() => handleGenerateCharge(company)}
                             disabled={chargingId === company.id}
-                            className="flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-700 disabled:opacity-60 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
+                            className="flex items-center gap-1.5 whitespace-nowrap rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-700 disabled:opacity-60 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
                           >
                             {chargingId === company.id ? (
                               <Loader2 className="animate-spin" size={14} />
                             ) : (
                               <QrCode size={14} />
                             )}
-                            Gerar cobrança
+                            <span className="hidden sm:inline">Gerar cobrança</span>
+                            <span className="sm:hidden">Cobrar</span>
                           </button>
                         </td>
                       </tr>

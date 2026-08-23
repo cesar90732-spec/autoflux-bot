@@ -65,7 +65,7 @@ export default function Relatorios() {
     <div className="flex">
       <Sidebar />
       <main className="min-h-screen flex-1 bg-slate-50 dark:bg-slate-950">
-        <header className="flex items-center justify-between border-b border-slate-200 bg-white px-6 py-4 dark:border-slate-800 dark:bg-slate-900">
+        <header className="flex items-center justify-between border-b border-slate-200 bg-white py-4 pl-16 pr-4 dark:border-slate-800 dark:bg-slate-900 md:px-6">
           <div>
             <h1 className="text-lg font-semibold text-slate-900 dark:text-white">Relatórios</h1>
             <p className="text-sm text-slate-500 dark:text-slate-400">
