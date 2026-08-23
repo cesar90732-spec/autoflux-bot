@@ -3,6 +3,7 @@
 // primeiro usuário como admin) e login (valida credenciais e emite JWT).
 
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -122,7 +123,10 @@ async function me(req, res, next) {
 // POST /api/auth/google
 // Recebe o "credential" (ID token) que o botão do Google devolve no
 // frontend, valida com o Google, e loga o usuário se o e-mail já
-// existir no sistema. Não cria empresa nova por esse fluxo.
+// existir no sistema. Se for a primeira vez (e-mail novo), cria a
+// empresa e o usuário admin automaticamente — mesmo comportamento do
+// /register, só que disparado pelo próprio login com Google, sem
+// exigir senha (a conta nasce sem uma; login sempre será via Google).
 async function googleLogin(req, res, next) {
   try {
     const { credential } = req.body;
@@ -136,19 +140,39 @@ async function googleLogin(req, res, next) {
     });
     const payload = ticket.getPayload();
     const email = payload.email;
+    const googleName = payload.name || email.split('@')[0];
 
-    const user = await userModel.findByEmail(email);
+    let user = await userModel.findByEmail(email);
+    let isNewAccount = false;
+
     if (!user) {
-      return res.status(404).json({
-        error: 'Nenhuma conta encontrada com este e-mail do Google. Cadastre sua empresa primeiro.',
+      isNewAccount = true;
+
+      // Conta nasce sem senha de verdade (login sempre será via Google);
+      // gera um hash aleatório só pra satisfazer a coluna NOT NULL e
+      // garantir que ninguém consiga entrar nela por e-mail/senha.
+      const randomPassword = crypto.randomBytes(32).toString('hex');
+      const passwordHash = await bcrypt.hash(randomPassword, SALT_ROUNDS);
+
+      const company = await companyModel.create({ name: `Empresa de ${googleName}` });
+
+      user = await userModel.create({
+        companyId: company.id,
+        name: googleName,
+        email,
+        passwordHash,
+        role: 'admin', // quem cria a conta é sempre o dono/admin da empresa
       });
+
+      logger.info(`Nova empresa criada via login com Google: ${company.name} (${email})`);
     }
 
     await userModel.setOnlineStatus(user.id, true);
     const token = generateToken(user);
 
-    return res.json({
+    return res.status(isNewAccount ? 201 : 200).json({
       token,
+      isNewAccount,
       user: {
         id: user.id,
         name: user.name,
