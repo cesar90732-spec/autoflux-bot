@@ -32,7 +32,11 @@ function generateToken(user) {
 // (POST /api/users), restrita a admins — ver users.controller na Etapa 3.
 async function register(req, res, next) {
   try {
-    const { companyName, name, email, password, billingPhone } = req.body;
+    const { companyName, name, email, password, billingPhone, termsAccepted } = req.body;
+
+    if (!termsAccepted) {
+      return res.status(400).json({ error: 'É necessário aceitar os Termos de Uso e a Política de Privacidade.' });
+    }
 
     const existing = await userModel.findByEmail(email);
     if (existing) {
@@ -52,6 +56,7 @@ async function register(req, res, next) {
       email,
       passwordHash,
       role: 'admin', // quem cadastra a empresa é sempre o administrador inicial
+      termsAccepted: true,
     });
 
     const token = generateToken(user);
@@ -133,7 +138,7 @@ async function me(req, res, next) {
 // exigir senha (a conta nasce sem uma; login sempre será via Google).
 async function googleLogin(req, res, next) {
   try {
-    const { credential } = req.body;
+    const { credential, termsAccepted } = req.body;
     if (!credential) {
       return res.status(400).json({ error: 'Token do Google não informado.' });
     }
@@ -150,6 +155,13 @@ async function googleLogin(req, res, next) {
     let isNewAccount = false;
 
     if (!user) {
+      // Conta nova via Google também precisa aceitar os termos — o
+      // frontend deve mostrar o checkbox ANTES de disparar o login do
+      // Google e mandar termsAccepted=true junto com o credential.
+      if (!termsAccepted) {
+        return res.status(400).json({ error: 'É necessário aceitar os Termos de Uso e a Política de Privacidade.' });
+      }
+
       isNewAccount = true;
 
       // Conta nasce sem senha de verdade (login sempre será via Google);
@@ -166,6 +178,7 @@ async function googleLogin(req, res, next) {
         email,
         passwordHash,
         role: 'admin', // quem cria a conta é sempre o dono/admin da empresa
+        termsAccepted: true,
       });
 
       logger.info(`Nova empresa criada via login com Google: ${company.name} (${email})`);

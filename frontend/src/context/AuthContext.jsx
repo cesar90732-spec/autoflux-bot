@@ -43,8 +43,15 @@ async function loginWithGoogle(credential) {
     return data.user;
   }
 
-  async function register({ companyName, name, email, password, billingPhone }) {
-    const { data } = await api.post('/auth/register', { companyName, name, email, password, billingPhone });
+  async function register({ companyName, name, email, password, billingPhone, termsAccepted }) {
+    const { data } = await api.post('/auth/register', {
+      companyName,
+      name,
+      email,
+      password,
+      billingPhone,
+      termsAccepted,
+    });
     localStorage.setItem('autoflux_token', data.token);
     setUser(data.user);
     return data.user;

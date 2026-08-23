@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import Termos from './pages/Termos';
 import Dashboard from './pages/Dashboard';
 import WhatsAppConnection from './pages/WhatsAppConnection';
 import Catalog from './pages/Catalog';
@@ -19,6 +20,7 @@ export default function App() {
       <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/termos" element={<Termos />} />
 
       <Route
         path="/dashboard"

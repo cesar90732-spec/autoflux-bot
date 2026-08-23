@@ -40,6 +40,9 @@ router.post(
       .withMessage('Informe o WhatsApp para onde vão os avisos de cobrança.')
       .isLength({ min: 10 })
       .withMessage('Informe o telefone com DDD (ex: 11987654321).'),
+    body('termsAccepted')
+      .custom((value) => value === true || value === 'true')
+      .withMessage('É necessário aceitar os Termos de Uso e a Política de Privacidade.'),
   ],
   validate,
   authController.register

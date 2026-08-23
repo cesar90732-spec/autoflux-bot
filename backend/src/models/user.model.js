@@ -18,12 +18,22 @@ async function findById(id) {
   return result.rows[0] || null;
 }
 
-async function create({ companyId, name, email, passwordHash, role }) {
+const TERMS_VERSION = 'v1';
+
+async function create({ companyId, name, email, passwordHash, role, termsAccepted }) {
   const result = await query(
-    `INSERT INTO users (company_id, name, email, password_hash, role)
-     VALUES ($1, $2, $3, $4, $5)
-     RETURNING id, company_id, name, email, role, created_at`,
-    [companyId, name, email, passwordHash, role || 'employee']
+    `INSERT INTO users (company_id, name, email, password_hash, role, terms_accepted_at, terms_version)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
+     RETURNING id, company_id, name, email, role, created_at, terms_accepted_at`,
+    [
+      companyId,
+      name,
+      email,
+      passwordHash,
+      role || 'employee',
+      termsAccepted ? new Date() : null,
+      termsAccepted ? TERMS_VERSION : null,
+    ]
   );
   return result.rows[0];
 }

@@ -11,7 +11,14 @@ import ThemeToggle from '../components/ThemeToggle';
 export default function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ companyName: '', name: '', email: '', password: '', billingPhone: '' });
+  const [form, setForm] = useState({
+    companyName: '',
+    name: '',
+    email: '',
+    password: '',
+    billingPhone: '',
+    termsAccepted: false,
+  });
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -93,6 +100,23 @@ export default function Register() {
               />
             </div>
           ))}
+
+          <label className="flex items-start gap-2 text-sm text-slate-600 dark:text-slate-400">
+            <input
+              type="checkbox"
+              required
+              checked={form.termsAccepted}
+              onChange={(e) => setForm({ ...form, termsAccepted: e.target.checked })}
+              className="mt-0.5 h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500 dark:border-slate-700"
+            />
+            <span>
+              Li e aceito os{' '}
+              <Link to="/termos" target="_blank" className="font-medium text-brand-600 hover:underline">
+                Termos de Uso e a Política de Privacidade
+              </Link>
+              .
+            </span>
+          </label>
 
           <button
             type="submit"
