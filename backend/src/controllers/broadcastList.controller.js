@@ -1,5 +1,6 @@
 // src/controllers/broadcastList.controller.js
 const broadcastListModel = require('../models/broadcastList.model');
+const contactModel = require('../models/contact.model');
 
 async function list(req, res, next) {
   try {
@@ -45,6 +46,12 @@ async function addContact(req, res, next) {
   try {
     const list = await broadcastListModel.findById(req.params.id, req.user.companyId);
     if (!list) return res.status(404).json({ error: 'Lista não encontrada.' });
+
+    // Sem checar isso, dava pra adicionar o contactId de OUTRA empresa
+    // nesta lista e depois ver o nome/telefone dele via GET .../contacts.
+    const contact = await contactModel.findById(req.user.companyId, req.body.contactId);
+    if (!contact) return res.status(404).json({ error: 'Contato não encontrado.' });
+
     await broadcastListModel.addContact(req.params.id, req.body.contactId);
     return res.status(204).send();
   } catch (err) {
@@ -54,6 +61,9 @@ async function addContact(req, res, next) {
 
 async function removeContact(req, res, next) {
   try {
+    const list = await broadcastListModel.findById(req.params.id, req.user.companyId);
+    if (!list) return res.status(404).json({ error: 'Lista não encontrada.' });
+
     await broadcastListModel.removeContact(req.params.id, req.params.contactId);
     return res.status(204).send();
   } catch (err) {

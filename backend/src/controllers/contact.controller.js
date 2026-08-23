@@ -16,7 +16,8 @@ async function list(req, res, next) {
 // POST /api/contacts/:id/tags  { tagId }
 async function addTag(req, res, next) {
   try {
-    await contactModel.addTag(req.params.id, req.body.tagId);
+    const ok = await contactModel.addTag(req.user.companyId, req.params.id, req.body.tagId);
+    if (!ok) return res.status(404).json({ error: 'Contato ou etiqueta não encontrados.' });
     return res.status(204).send();
   } catch (err) {
     next(err);
@@ -26,7 +27,8 @@ async function addTag(req, res, next) {
 // DELETE /api/contacts/:id/tags/:tagId
 async function removeTag(req, res, next) {
   try {
-    await contactModel.removeTag(req.params.id, req.params.tagId);
+    const ok = await contactModel.removeTag(req.user.companyId, req.params.id, req.params.tagId);
+    if (!ok) return res.status(404).json({ error: 'Contato ou etiqueta não encontrados.' });
     return res.status(204).send();
   } catch (err) {
     next(err);

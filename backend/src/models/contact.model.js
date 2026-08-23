@@ -45,19 +45,32 @@ async function listByCompany(companyId, { search } = {}) {
   return result.rows;
 }
 
-async function addTag(contactId, tagId) {
-  await query(
-    `INSERT INTO contact_tags (contact_id, tag_id) VALUES ($1, $2)
-     ON CONFLICT DO NOTHING`,
-    [contactId, tagId]
+// companyId é obrigatório aqui: o INSERT/DELETE só acontece se tanto o
+// contato quanto a tag pertencerem à empresa do usuário logado (os
+// subselects filtram por company_id). Sem isso, um usuário de qualquer
+// empresa poderia marcar/desmarcar tags em contatos de outra empresa
+// só sabendo o UUID — o controller trata "0 linhas afetadas" como 404.
+async function addTag(companyId, contactId, tagId) {
+  const result = await query(
+    `INSERT INTO contact_tags (contact_id, tag_id)
+     SELECT $2, $3
+     WHERE EXISTS (SELECT 1 FROM contacts WHERE id = $2 AND company_id = $1)
+       AND EXISTS (SELECT 1 FROM tags WHERE id = $3 AND company_id = $1)
+     ON CONFLICT DO NOTHING
+     RETURNING contact_id`,
+    [companyId, contactId, tagId]
   );
+  return result.rowCount > 0;
 }
 
-async function removeTag(contactId, tagId) {
-  await query('DELETE FROM contact_tags WHERE contact_id = $1 AND tag_id = $2', [
-    contactId,
-    tagId,
-  ]);
+async function removeTag(companyId, contactId, tagId) {
+  const result = await query(
+    `DELETE FROM contact_tags
+     WHERE contact_id = $2 AND tag_id = $3
+       AND EXISTS (SELECT 1 FROM contacts WHERE id = $2 AND company_id = $1)`,
+    [companyId, contactId, tagId]
+  );
+  return result.rowCount > 0;
 }
 
 module.exports = { findOrCreate, findById, listByCompany, addTag, removeTag };

@@ -15,9 +15,27 @@ async function list(req, res, next) {
   }
 }
 
+// Confere que a conversa pedida na URL (:id) realmente pertence à
+// empresa do usuário logado. SEM ISSO, qualquer usuário autenticado de
+// qualquer empresa poderia ler/responder/transferir conversas de outras
+// empresas só adivinhando ou trocando o UUID na URL — é a checagem mais
+// importante de todo o multi-tenant, então toda rota abaixo passa por
+// aqui antes de tocar na conversa.
+async function loadOwnedConversation(req, res) {
+  const conversation = await conversationModel.findById(req.params.id, req.user.companyId);
+  if (!conversation) {
+    res.status(404).json({ error: 'Conversa não encontrada.' });
+    return null;
+  }
+  return conversation;
+}
+
 // GET /api/conversations/:id/messages
 async function listMessages(req, res, next) {
   try {
+    const conversation = await loadOwnedConversation(req, res);
+    if (!conversation) return;
+
     const messages = await messageModel.listByConversation(req.params.id);
     return res.json({ messages });
   } catch (err) {
@@ -31,6 +49,9 @@ async function listMessages(req, res, next) {
 // POST /api/media/upload).
 async function reply(req, res, next) {
   try {
+    const conversation = await loadOwnedConversation(req, res);
+    if (!conversation) return;
+
     const { text, phoneNumber, contentType = 'text', mediaUrl } = req.body;
     if (!phoneNumber || (contentType === 'text' && !text) || (contentType !== 'text' && !mediaUrl)) {
       return res.status(400).json({ error: 'Dados insuficientes para enviar a mensagem.' });
@@ -69,6 +90,9 @@ async function reply(req, res, next) {
 // mesmo sem o bot ter transferido automaticamente).
 async function transfer(req, res, next) {
   try {
+    const owned = await loadOwnedConversation(req, res);
+    if (!owned) return;
+
     const conversation = await conversationModel.transferToHuman(req.params.id, req.user.userId);
     return res.json({ conversation });
   } catch (err) {
@@ -79,6 +103,9 @@ async function transfer(req, res, next) {
 // POST /api/conversations/:id/return-to-bot
 async function returnToBot(req, res, next) {
   try {
+    const owned = await loadOwnedConversation(req, res);
+    if (!owned) return;
+
     const conversation = await conversationModel.returnToBot(req.params.id);
     return res.json({ conversation });
   } catch (err) {

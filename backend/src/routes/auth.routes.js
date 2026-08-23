@@ -3,14 +3,30 @@
 
 const { Router } = require('express');
 const { body } = require('express-validator');
+const rateLimit = require('express-rate-limit');
 const authController = require('../controllers/auth.controller');
 const { authenticate } = require('../middleware/auth.middleware');
 const validate = require('../middleware/validate');
 
 const router = Router();
 
+// Limite específico para tentativas de login/cadastro: o rate limit
+// global (200 req/15min) é compartilhado com toda a API e não segura
+// força bruta de senha sozinho. 10 tentativas por IP a cada 15min é
+// suficiente pra um usuário real que errou a senha, mas trava um
+// ataque automatizado. Não conta requisições bem-sucedidas.
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true,
+  message: { error: 'Muitas tentativas. Aguarde alguns minutos e tente novamente.' },
+});
+
 router.post(
   '/register',
+  authLimiter,
   [
     body('companyName').trim().notEmpty().withMessage('Informe o nome da empresa.'),
     body('name').trim().notEmpty().withMessage('Informe seu nome.'),
@@ -31,6 +47,7 @@ router.post(
 
 router.post(
   '/login',
+  authLimiter,
   [
     body('email').isEmail().withMessage('Informe um e-mail válido.').normalizeEmail(),
     body('password').notEmpty().withMessage('Informe a senha.'),
@@ -39,7 +56,7 @@ router.post(
   authController.login
 );
 
-router.post('/google', authController.googleLogin);
+router.post('/google', authLimiter, authController.googleLogin);
 router.get('/me', authenticate, authController.me);
 
 module.exports = router;
