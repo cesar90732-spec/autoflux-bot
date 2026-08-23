@@ -3,7 +3,64 @@ import Sidebar from '../components/Sidebar';
 import ThemeToggle from '../components/ThemeToggle';
 import StatCard from '../components/StatCard';
 import api from '../api/client';
-import { Building2, Loader2, Sparkles, Users, MessageCircle } from 'lucide-react';
+import { Building2, Loader2, Sparkles, Users, MessageCircle, QrCode, CheckCircle2, X } from 'lucide-react';
+
+// Modal simples que mostra o QR Code + Copia-e-Cola de uma cobrança recém
+// gerada, e permite confirmar o pagamento depois de ver o Pix cair na conta.
+function ChargeModal({ charge, onClose, onConfirm, confirming }) {
+  const [copied, setCopied] = useState(false);
+
+  if (!charge) return null;
+
+  function handleCopy() {
+    navigator.clipboard.writeText(charge.payment_url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-sm rounded-xl bg-white p-5 dark:bg-slate-900">
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="font-semibold text-slate-900 dark:text-white">Cobrança Pix</h3>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="flex flex-col items-center gap-3">
+          <img
+            src={charge.qr_code_base64}
+            alt="QR Code Pix"
+            className="h-56 w-56 rounded-lg border dark:border-slate-700"
+          />
+
+          <p className="text-center text-sm text-slate-500 dark:text-slate-400">
+            R$ {(charge.amount_cents / 100).toFixed(2)} — status: <strong>{charge.status}</strong>
+          </p>
+
+          <button
+            onClick={handleCopy}
+            className="w-full rounded-lg border border-slate-300 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+          >
+            {copied ? 'Código copiado!' : 'Copiar Pix Copia-e-Cola'}
+          </button>
+
+          {charge.status !== 'paid' && (
+            <button
+              onClick={() => onConfirm(charge)}
+              disabled={confirming}
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
+            >
+              {confirming ? <Loader2 className="animate-spin" size={16} /> : <CheckCircle2 size={16} />}
+              Confirmar que o Pix caiu
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function PaymentBadge({ status }) {
   const isOk = status === 'em_dia';
@@ -40,21 +97,51 @@ function WhatsAppBadge({ status }) {
 export default function Admin() {
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [chargingId, setChargingId] = useState(null); // qual empresa está gerando cobrança agora
+  const [activeCharge, setActiveCharge] = useState(null); // cobrança aberta no modal
+  const [confirming, setConfirming] = useState(false);
+
+  async function loadCompanies() {
+    try {
+      const { data } = await api.get('/platform/companies');
+      setCompanies(data);
+    } catch (err) {
+      console.error('Erro ao carregar empresas:', err);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
-    async function loadCompanies() {
-      try {
-        const { data } = await api.get('/platform/companies');
-        setCompanies(data);
-      } catch (err) {
-        console.error('Erro ao carregar empresas:', err);
-      } finally {
-        setLoading(false);
-      }
-    }
-
     loadCompanies();
   }, []);
+
+  async function handleGenerateCharge(company) {
+    setChargingId(company.id);
+    try {
+      const { data } = await api.post(`/billing/companies/${company.id}/charge`);
+      setActiveCharge(data);
+    } catch (err) {
+      console.error('Erro ao gerar cobrança:', err);
+      alert(err.response?.data?.error || 'Não foi possível gerar a cobrança. Veja o console.');
+    } finally {
+      setChargingId(null);
+    }
+  }
+
+  async function handleConfirmPayment(charge) {
+    setConfirming(true);
+    try {
+      await api.post(`/billing/charges/${charge.id}/confirm`);
+      setActiveCharge(null);
+      await loadCompanies(); // atualiza a tabela pra refletir "em dia"
+    } catch (err) {
+      console.error('Erro ao confirmar pagamento:', err);
+      alert(err.response?.data?.error || 'Não foi possível confirmar. Veja o console.');
+    } finally {
+      setConfirming(false);
+    }
+  }
 
   const emDia = companies.filter((c) => c.payment_status === 'em_dia').length;
   const usandoIa = companies.filter((c) => c.ai_enabled).length;
@@ -111,6 +198,7 @@ export default function Admin() {
                       <th className="p-3 text-left">IA</th>
                       <th className="p-3 text-left">Atendentes</th>
                       <th className="p-3 text-left">WhatsApp</th>
+                      <th className="p-3 text-left">Cobrança</th>
                     </tr>
                   </thead>
 
@@ -149,6 +237,20 @@ export default function Admin() {
                         <td className="p-3">
                           <WhatsAppBadge status={company.whatsapp_status} />
                         </td>
+                        <td className="p-3">
+                          <button
+                            onClick={() => handleGenerateCharge(company)}
+                            disabled={chargingId === company.id}
+                            className="flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-700 disabled:opacity-60 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
+                          >
+                            {chargingId === company.id ? (
+                              <Loader2 className="animate-spin" size={14} />
+                            ) : (
+                              <QrCode size={14} />
+                            )}
+                            Gerar cobrança
+                          </button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -158,6 +260,13 @@ export default function Admin() {
           </div>
         </div>
       </main>
+
+      <ChargeModal
+        charge={activeCharge}
+        onClose={() => setActiveCharge(null)}
+        onConfirm={handleConfirmPayment}
+        confirming={confirming}
+      />
     </div>
   );
 }
