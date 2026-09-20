@@ -6,3 +6,4 @@ backend/logs/
 backend/backups/
 backend/sessions/
 backend/dump.rdb
+*.zip
