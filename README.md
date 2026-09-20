@@ -1,3 +1,33 @@
+# AutoFlux — Automação de Atendimento via WhatsApp
+
+SaaS multi-empresa que conecta o WhatsApp de pequenos e médios negócios
+a atendimento automático com IA: catálogo, campanhas, agendamento de
+mensagens, relatórios e cobrança via Pix — tudo em um painel próprio.
+
+🔗 **Em produção:** https://autoflux-bot-1.onrender.com
+
+**Stack:** Node.js + Express · PostgreSQL · Redis · React + Vite + Tailwind · Docker
+
+---
+
+## Principais funcionalidades
+
+- Conexão de WhatsApp via QR Code (Baileys), sem precisar de API oficial
+- Atendimento automático por palavras-chave, fluxos de menu ou IA (OpenAI, Gemini, Claude)
+- Catálogo de produtos, listas de transmissão e agendamento de mensagens (BullMQ + Redis)
+- Painel de conversas em tempo real com sugestão de resposta por IA
+- Relatórios e exportação (CSV/PDF), backup automático do banco
+- Cobrança recorrente via Pix (QR Code + Copia-e-Cola) gerada automaticamente
+
+---
+
+## 📖 Documentação técnica completa
+
+O restante deste README documenta o desenvolvimento por etapas (1 a 5.2),
+com detalhes de arquitetura e decisões técnicas de cada módulo.
+
+---
+
 # AutoFlux Atendimento
 
 SaaS de automação de atendimento via WhatsApp para pequenos e médios negócios.
